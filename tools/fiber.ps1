@@ -15,7 +15,8 @@ function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
         return @("-G", "Ninja")
     }
-    if (Get-Command cl.exe -ErrorAction SilentlyContinue) {
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+    if ((Test-Path $vswhere) -or (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
         return @("-G", "Visual Studio 17 2022", "-A", "x64")
     }
     throw "No C++ build tool found. Install Visual Studio 2022 Desktop C++ or Ninja, then reopen PowerShell."
