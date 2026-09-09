@@ -25,13 +25,13 @@ if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
         throw "No C++ toolchain found. Install Visual Studio 2022 Desktop C++ manually, then run the installer again."
     }
     Write-Host "Installing Visual Studio 2022 Desktop C++ workload..."
-    winget install Microsoft.VisualStudio.2022.Community `
+    winget install Microsoft.VisualStudio.2022.BuildTools `
         --accept-source-agreements --accept-package-agreements `
         --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
     if ($LASTEXITCODE -ne 0) {
         throw "Visual Studio installation failed with exit code $LASTEXITCODE"
     }
-    Write-Host "Visual Studio C++ tools installed. Restart VS Code before running fiber dev."
+    Write-Host "Visual Studio C++ tools installed. Open a new terminal before running fiber dev."
 }
 $localSource = if ($PSScriptRoot) { Join-Path $PSScriptRoot "fiber.ps1" } else { $null }
 $source = Join-Path $InstallDirectory "fiber.ps1"

@@ -22,7 +22,7 @@ On Windows, install Visual Studio 2022 with the Desktop C++ workload, or install
 For an easy Visual Studio installation:
 
 ```powershell
-winget install Microsoft.VisualStudio.2022.Community --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
 ```
 
 ## Windows CLI
@@ -31,7 +31,7 @@ Install the native CLI and Windows C++ build tools from the latest GitHub Releas
 
 Release page: https://github.com/dixithsnaik/fiberapi/releases/latest
 
-Open a new VS Code window after installation so the new compiler and PATH are loaded. The CLI can clone an application template from Git:
+VS Code is optional. Close the current terminal and open a new PowerShell or Command Prompt window so the new compiler and PATH are loaded. The CLI can clone an application template from Git:
 
 ```powershell
 fiber new notes-api --Template https://github.com/your-name/fiber-notes-template.git
@@ -113,7 +113,7 @@ Stop the server with `Ctrl-C`.
 
 ## Start A Notes Backend
 
-On Windows, open the project in VS Code and use PowerShell or a Visual Studio Developer PowerShell terminal. Native Windows uses the IOCP backend; WSL2 is only needed when you specifically want to test the Linux `io_uring` backend.
+On Windows, use PowerShell or Command Prompt directly. VS Code is optional. Native Windows uses the IOCP backend; WSL2 is only needed when you specifically want to test the Linux `io_uring` backend.
 
 From the FiberAPI repository:
 
