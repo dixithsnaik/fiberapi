@@ -10,6 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
+$fiberVersion = "0.2.4"
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -29,7 +30,7 @@ function Get-CMakeGeneratorArguments {
 
 function Show-Help {
     @"
-FiberAPI Windows CLI
+FiberAPI Windows CLI v$fiberVersion
 
 Usage:
   fiber new NAME --Template URL   Clone a Git project template
@@ -47,6 +48,10 @@ Environment:
 
 if ($Help -or $Command -in @("help", "--help", "-h")) {
     Show-Help
+    exit 0
+}
+if ($Command -in @("version", "--version", "-v")) {
+    Write-Host "fiber $fiberVersion"
     exit 0
 }
 
