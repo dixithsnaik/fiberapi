@@ -14,7 +14,8 @@ if not "%RESULT%"=="0" goto :error
 
 echo.
 echo FiberAPI CLI installed successfully.
-echo Open a new PowerShell window and run: fiber help
+echo Opening a new PowerShell window with the updated PATH...
+start "FiberAPI" powershell.exe -NoLogo -NoExit -Command "$env:Path=[Environment]::GetEnvironmentVariable('Path','User')+';'+[Environment]::GetEnvironmentVariable('Path','Machine'); fiber help"
 pause
 exit /b 0
 

@@ -24,5 +24,15 @@ if ($pathEntries -notcontains $InstallDirectory) {
 }
 $env:Path = "$InstallDirectory;$env:Path"
 
+$profileDirectory = Split-Path -Parent $PROFILE
+if (-not (Test-Path $profileDirectory)) {
+    New-Item $profileDirectory -ItemType Directory -Force | Out-Null
+}
+$profileLine = "`$env:Path = `"$InstallDirectory;`$env:Path`""
+if (-not (Test-Path $PROFILE) -or -not (Select-String -Path $PROFILE -SimpleMatch $InstallDirectory -Quiet)) {
+    Add-Content -Path $PROFILE -Value "`n$profileLine"
+}
+
 Write-Host "Installed fiber CLI to $InstallDirectory"
+Write-Host "PowerShell profile configured: $PROFILE"
 Write-Host "Open a new PowerShell window, then run: fiber help"
