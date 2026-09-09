@@ -63,7 +63,7 @@ Set-Content -Path $shim -Value '@echo off
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0fiber.ps1" %*' -Encoding ASCII
 
 if (Test-Path $windowsAppsDirectory) {
-    Copy-Item $source (Join-Path $windowsAppsDirectory "fiber.ps1") -Force
+    Remove-Item (Join-Path $windowsAppsDirectory "fiber.ps1") -Force -ErrorAction SilentlyContinue
     Copy-Item $shim (Join-Path $windowsAppsDirectory "fiber.cmd") -Force
 }
 
