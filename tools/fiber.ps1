@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.2.4"
+$fiberVersion = "0.2.5"
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {

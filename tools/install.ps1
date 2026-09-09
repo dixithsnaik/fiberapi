@@ -5,6 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$installerVersion = "0.2.5"
 
 function Test-CppToolchain {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -35,6 +36,21 @@ if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
 }
 $localSource = if ($PSScriptRoot) { Join-Path $PSScriptRoot "fiber.ps1" } else { $null }
 $source = Join-Path $InstallDirectory "fiber.ps1"
+$windowsAppsDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+
+$oldInstallDirectories = @(
+    $InstallDirectory,
+    (Join-Path $HOME "AppData\Local\FiberAPI\bin")
+) | Select-Object -Unique
+foreach ($directory in $oldInstallDirectories) {
+    Remove-Item (Join-Path $directory "fiber.ps1") -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $directory "fiber.cmd") -Force -ErrorAction SilentlyContinue
+}
+if (Test-Path $windowsAppsDirectory) {
+    Remove-Item (Join-Path $windowsAppsDirectory "fiber.ps1") -Force -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $windowsAppsDirectory "fiber.cmd") -Force -ErrorAction SilentlyContinue
+}
+
 New-Item -ItemType Directory -Force $InstallDirectory | Out-Null
 if ($localSource -and (Test-Path $localSource)) {
     Copy-Item $localSource $source -Force
@@ -46,17 +62,16 @@ $shim = Join-Path $InstallDirectory "fiber.cmd"
 Set-Content -Path $shim -Value '@echo off
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0fiber.ps1" %*' -Encoding ASCII
 
-$windowsAppsDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
 if (Test-Path $windowsAppsDirectory) {
     Copy-Item $source (Join-Path $windowsAppsDirectory "fiber.ps1") -Force
     Copy-Item $shim (Join-Path $windowsAppsDirectory "fiber.cmd") -Force
 }
 
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-$pathEntries = @($userPath -split ";" | Where-Object { $_ })
-if ($pathEntries -notcontains $InstallDirectory) {
-    [Environment]::SetEnvironmentVariable("Path", (($pathEntries + $InstallDirectory) -join ";"), "User")
-}
+$pathEntries = @($userPath -split ";" | Where-Object {
+    $_ -and $_ -notmatch "(?i)FiberAPI[\\/]bin"
+})
+[Environment]::SetEnvironmentVariable("Path", (($pathEntries + $InstallDirectory) -join ";"), "User")
 $env:Path = "$InstallDirectory;$env:Path"
 
 $profileDirectory = Split-Path -Parent $PROFILE
@@ -64,11 +79,15 @@ if (-not (Test-Path $profileDirectory)) {
     New-Item $profileDirectory -ItemType Directory -Force | Out-Null
 }
 $profileLine = "`$env:Path = `"$InstallDirectory;`$env:Path`""
-if (-not (Test-Path $PROFILE) -or -not (Select-String -Path $PROFILE -SimpleMatch $InstallDirectory -Quiet)) {
-    Add-Content -Path $PROFILE -Value "`n$profileLine"
+if (Test-Path $PROFILE) {
+    $profileContent = Get-Content $PROFILE | Where-Object {
+        $_ -notmatch "(?i)FiberAPI[\\/]bin" -and $_ -notmatch "fiber\.cmd"
+    }
+    Set-Content -Path $PROFILE -Value $profileContent
 }
+Add-Content -Path $PROFILE -Value "`n$profileLine"
 
-Write-Host "Installed fiber CLI to $InstallDirectory"
+Write-Host "Installed Fiber CLI v$installerVersion to $InstallDirectory"
 if (Test-Path (Join-Path $windowsAppsDirectory "fiber.cmd")) {
     Write-Host "Installed fiber command to $windowsAppsDirectory"
 }
