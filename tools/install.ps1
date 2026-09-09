@@ -17,6 +17,12 @@ $shim = Join-Path $InstallDirectory "fiber.cmd"
 Set-Content -Path $shim -Value '@echo off
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0fiber.ps1" %*' -Encoding ASCII
 
+$windowsAppsDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+if (Test-Path $windowsAppsDirectory) {
+    Copy-Item $source (Join-Path $windowsAppsDirectory "fiber.ps1") -Force
+    Copy-Item $shim (Join-Path $windowsAppsDirectory "fiber.cmd") -Force
+}
+
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 $pathEntries = @($userPath -split ";" | Where-Object { $_ })
 if ($pathEntries -notcontains $InstallDirectory) {
@@ -34,5 +40,8 @@ if (-not (Test-Path $PROFILE) -or -not (Select-String -Path $PROFILE -SimpleMatc
 }
 
 Write-Host "Installed fiber CLI to $InstallDirectory"
+if (Test-Path (Join-Path $windowsAppsDirectory "fiber.cmd")) {
+    Write-Host "Installed fiber command to $windowsAppsDirectory"
+}
 Write-Host "PowerShell profile configured: $PROFILE"
 Write-Host "Open a new PowerShell window, then run: fiber help"
