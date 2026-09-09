@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.2.5"
+$installerVersion = "0.2.7"
 
 function Test-CppToolchain {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -63,7 +63,8 @@ Set-Content -Path $shim -Value '@echo off
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0fiber.ps1" %*' -Encoding ASCII
 
 if (Test-Path $windowsAppsDirectory) {
-    Remove-Item (Join-Path $windowsAppsDirectory "fiber.ps1") -Force -ErrorAction SilentlyContinue
+    $windowsAppsScript = Join-Path $windowsAppsDirectory "fiber.ps1"
+    Set-Content -Path $windowsAppsScript -Value "& '$source' @args" -Encoding UTF8
     Copy-Item $shim (Join-Path $windowsAppsDirectory "fiber.cmd") -Force
 }
 
