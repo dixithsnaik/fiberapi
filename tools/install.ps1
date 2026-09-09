@@ -1,11 +1,16 @@
 param(
     [string]$InstallDirectory = "$HOME\AppData\Local\FiberAPI\bin",
-    [string]$RawBaseUrl = "https://raw.githubusercontent.com/dixithsnaik/fiberapi/main/tools",
+    [string]$RawBaseUrl = "",
     [switch]$SkipBuildTools
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.2.8"
+$installerVersion = "0.2.9"
+$cliUrl = if ($RawBaseUrl) {
+    "$RawBaseUrl/fiber.ps1"
+} else {
+    "https://github.com/dixithsnaik/fiberapi/releases/download/v$installerVersion/fiber.ps1"
+}
 
 function Test-CppToolchain {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -55,7 +60,7 @@ New-Item -ItemType Directory -Force $InstallDirectory | Out-Null
 if ($localSource -and (Test-Path $localSource)) {
     Copy-Item $localSource $source -Force
 } else {
-    Invoke-WebRequest "$RawBaseUrl/fiber.ps1" -OutFile $source
+    Invoke-WebRequest $cliUrl -OutFile $source
 }
 
 $shim = Join-Path $InstallDirectory "fiber.cmd"
