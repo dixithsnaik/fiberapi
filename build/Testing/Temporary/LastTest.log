@@ -1,18 +1,18 @@
-Start testing: Sep 09 11:52 UTC
+Start testing: Sep 09 14:10 UTC
 ----------------------------------------------------------
 1/1 Testing: fiber_header_test
 1/1 Test: fiber_header_test
 Command: "/home/dixit/fiberapi/build/fiber_header_test"
 Directory: /home/dixit/fiberapi/build
-"fiber_header_test" start time: Sep 09 11:52 UTC
+"fiber_header_test" start time: Sep 09 14:10 UTC
 Output:
 ----------------------------------------------------------
 <end of output>
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"fiber_header_test" end time: Sep 09 11:52 UTC
+"fiber_header_test" end time: Sep 09 14:10 UTC
 "fiber_header_test" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Sep 09 11:52 UTC
+End testing: Sep 09 14:10 UTC
