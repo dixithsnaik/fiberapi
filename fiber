@@ -15,6 +15,7 @@ fi
 BUILD_DIR="${FIBER_BUILD_DIR:-${PROJECT_DIR}/build}"
 BUILD_TYPE="${FIBER_BUILD_TYPE:-Release}"
 GENERATOR="${FIBER_GENERATOR:-Ninja}"
+DEFAULT_TEMPLATE_REPO="https://github.com/dixithsnaik/fiberapi.git"
 
 configure() {
     cmake -S "$PROJECT_DIR" -B "$BUILD_DIR" -G "$GENERATOR" \
@@ -46,7 +47,7 @@ Environment overrides:
   FIBER_BUILD_TYPE   CMake build type (default: Release)
   FIBER_GENERATOR    CMake generator (default: Ninja)
   FIBER_JOBS         Parallel build jobs (default: nproc)
-    FIBER_TEMPLATE_REPO Git URL used by fiber new
+    FIBER_TEMPLATE_REPO Git URL used by fiber new (default: FiberAPI repository)
 EOF
 }
 
@@ -129,20 +130,26 @@ new_project() {
         echo "Refusing to overwrite existing path: $project_name" >&2
         exit 1
     fi
-    local template_repo="${FIBER_TEMPLATE_REPO:-}"
+    local template_repo="${FIBER_TEMPLATE_REPO:-$DEFAULT_TEMPLATE_REPO}"
     if [[ "${3:-}" == "--template" ]]; then
         template_repo="${4:-}"
     fi
-    if [[ -n "$template_repo" ]]; then
+    if [[ "$template_repo" != "$DEFAULT_TEMPLATE_REPO" || "${3:-}" == "--template" ]]; then
         git clone --depth 1 "$template_repo" "$project_name"
         echo "Created $project_name from $template_repo"
         echo "Run: cd $project_name && fiber dev"
         return
     fi
-    mkdir -p "$project_name"
-    cp "$ROOT_DIR/templates/notes/CMakeLists.txt" "$project_name/CMakeLists.txt"
-    cp "$ROOT_DIR/templates/notes/main.cpp" "$project_name/main.cpp"
-    bundle_dependency bundle "$project_name"
+    local temporary_repo
+    temporary_repo="$(mktemp -d)"
+    git clone --depth 1 "$template_repo" "$temporary_repo/source"
+    mkdir -p "$project_name/fiber/include" "$project_name/fiber/third_party" "$project_name/fiber/lib"
+    cp "$temporary_repo/source/templates/notes/CMakeLists.txt" "$project_name/CMakeLists.txt"
+    cp "$temporary_repo/source/templates/notes/main.cpp" "$project_name/main.cpp"
+    cp -R "$temporary_repo/source/include/fiber" "$project_name/fiber/include/"
+    cp "$temporary_repo/source/third_party/picohttpparser.h" "$project_name/fiber/third_party/"
+    cp "$temporary_repo/source/third_party/picohttpparser.c" "$project_name/fiber/third_party/"
+    rm -rf "$temporary_repo"
     echo "Created $project_name"
     echo "Run: cd $project_name && fiber dev"
 }

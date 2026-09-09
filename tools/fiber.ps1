@@ -9,6 +9,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
 
 function Show-Help {
     @"
@@ -39,9 +40,22 @@ switch ($Command) {
     "new" {
         if (-not $ProjectName) { throw "Usage: fiber new NAME --Template GIT_URL" }
         if (Test-Path $ProjectName) { throw "Refusing to overwrite existing path: $ProjectName" }
-        $templateUrl = if ($Template) { $Template } else { $env:FIBER_TEMPLATE_REPO }
-        if (-not $templateUrl) { throw "Provide --Template GIT_URL or set FIBER_TEMPLATE_REPO" }
-        git clone --depth 1 $templateUrl $ProjectName
+        $templateUrl = if ($Template) { $Template } elseif ($env:FIBER_TEMPLATE_REPO) { $env:FIBER_TEMPLATE_REPO } else { $defaultTemplate }
+        if ($templateUrl -eq $defaultTemplate -and -not $Template -and -not $env:FIBER_TEMPLATE_REPO) {
+            $temporaryDirectory = Join-Path $env:TEMP ("fiber-template-" + [guid]::NewGuid())
+            git clone --depth 1 $templateUrl $temporaryDirectory
+            New-Item (Join-Path $ProjectName "fiber\include") -ItemType Directory -Force | Out-Null
+            New-Item (Join-Path $ProjectName "fiber\third_party") -ItemType Directory -Force | Out-Null
+            New-Item (Join-Path $ProjectName "fiber\lib") -ItemType Directory -Force | Out-Null
+            Copy-Item (Join-Path $temporaryDirectory "templates\notes\CMakeLists.txt") $ProjectName
+            Copy-Item (Join-Path $temporaryDirectory "templates\notes\main.cpp") $ProjectName
+            Copy-Item (Join-Path $temporaryDirectory "include\fiber") (Join-Path $ProjectName "fiber\include") -Recurse
+            Copy-Item (Join-Path $temporaryDirectory "third_party\picohttpparser.h") (Join-Path $ProjectName "fiber\third_party")
+            Copy-Item (Join-Path $temporaryDirectory "third_party\picohttpparser.c") (Join-Path $ProjectName "fiber\third_party")
+            Remove-Item $temporaryDirectory -Recurse -Force
+        } else {
+            git clone --depth 1 $templateUrl $ProjectName
+        }
         Write-Host "Created $ProjectName from $templateUrl"
         Write-Host "Run: cd $ProjectName; fiber build"
     }

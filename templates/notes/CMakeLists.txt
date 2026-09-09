@@ -16,17 +16,31 @@ target_include_directories(FiberAPI::FiberAPI INTERFACE
 	"${FIBER_ROOT}/third_party")
 
 if(WIN32)
-	add_library(FiberAPI::picohttpparser STATIC IMPORTED)
-	set_target_properties(FiberAPI::picohttpparser PROPERTIES
-		IMPORTED_LOCATION "${FIBER_ROOT}/lib/picohttpparser.lib")
+	if(EXISTS "${FIBER_ROOT}/lib/picohttpparser.lib")
+		add_library(FiberAPI::picohttpparser STATIC IMPORTED)
+		set_target_properties(FiberAPI::picohttpparser PROPERTIES
+			IMPORTED_LOCATION "${FIBER_ROOT}/lib/picohttpparser.lib")
+	else()
+		add_library(FiberAPI::picohttpparser STATIC
+			"${FIBER_ROOT}/third_party/picohttpparser.c")
+		target_include_directories(FiberAPI::picohttpparser PRIVATE
+			"${FIBER_ROOT}/third_party")
+	endif()
 	target_link_libraries(FiberAPI::FiberAPI INTERFACE
 		FiberAPI::picohttpparser ws2_32 mswsock)
 else()
 	find_package(Threads REQUIRED)
 	find_library(URING_LIBRARY uring REQUIRED)
-	add_library(FiberAPI::picohttpparser STATIC IMPORTED)
-	set_target_properties(FiberAPI::picohttpparser PROPERTIES
-		IMPORTED_LOCATION "${FIBER_ROOT}/lib/libpicohttpparser.a")
+	if(EXISTS "${FIBER_ROOT}/lib/libpicohttpparser.a")
+		add_library(FiberAPI::picohttpparser STATIC IMPORTED)
+		set_target_properties(FiberAPI::picohttpparser PROPERTIES
+			IMPORTED_LOCATION "${FIBER_ROOT}/lib/libpicohttpparser.a")
+	else()
+		add_library(FiberAPI::picohttpparser STATIC
+			"${FIBER_ROOT}/third_party/picohttpparser.c")
+		target_include_directories(FiberAPI::picohttpparser PRIVATE
+			"${FIBER_ROOT}/third_party")
+	endif()
 	target_link_libraries(FiberAPI::FiberAPI INTERFACE
 		FiberAPI::picohttpparser ${URING_LIBRARY} Threads::Threads)
 endif()
