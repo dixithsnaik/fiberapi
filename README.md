@@ -17,7 +17,7 @@ sudo apt update
 sudo apt install -y build-essential cmake ninja-build liburing-dev
 ```
 
-On Windows, install Visual Studio Build Tools with the Desktop C++ workload, or MinGW GCC 12+ with `mingw32-make`. VS Code is not required; the Windows backend uses IOCP and does not require WSL. GCC 7.x is too old for this C++20 project.
+On Windows, the installer upgrades old GCC versions through MSYS2 UCRT64. VS Code is not required; the Windows backend uses IOCP and does not require WSL. GCC 7.x is too old for this C++20 project.
 
 For an easy Visual Studio installation:
 

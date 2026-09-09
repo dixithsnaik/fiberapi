@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.3.1"
+$installerVersion = "0.3.2"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {
@@ -48,10 +48,37 @@ function Install-CppToolchain {
     }
 }
 
-if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
+function Install-Msys2Gcc {
+    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+        throw "winget is unavailable. Install MSYS2 manually from https://www.msys2.org/"
+    }
+    winget install MSYS2.MSYS2 --accept-source-agreements --accept-package-agreements
+    if ($LASTEXITCODE -ne 0) {
+        throw "MSYS2 installation failed with exit code $LASTEXITCODE"
+    }
+    $bash = "C:\msys64\usr\bin\bash.exe"
+    if (-not (Test-Path $bash)) {
+        throw "MSYS2 was installed in an unexpected location. Install the UCRT64 toolchain manually."
+    }
+    & $bash -lc "pacman -Syu --noconfirm"
+    & $bash -lc "pacman -S --needed --noconfirm mingw-w64-ucrt-x86_64-toolchain"
+    if ($LASTEXITCODE -ne 0) {
+        throw "MSYS2 GCC installation failed with exit code $LASTEXITCODE"
+    }
+    $ucrtBin = "C:\msys64\ucrt64\bin"
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $pathEntries = @($userPath -split ";" | Where-Object { $_ -and $_ -ne $ucrtBin })
+    [Environment]::SetEnvironmentVariable("Path", (($pathEntries + $ucrtBin) -join ";"), "User")
+    $env:Path = "$ucrtBin;$env:Path"
+}
+
+$gccVersion = Get-GccVersion
+$needsCompiler = -not (Test-CppToolchain)
+$needsGccUpgrade = $gccVersion -and $gccVersion -lt 12
+if (-not $SkipBuildTools -and ($needsCompiler -or $needsGccUpgrade)) {
     $gccVersion = Get-GccVersion
     if ($gccVersion) {
-        Write-Host "Detected GCC $gccVersion. FiberAPI requires GCC 12+ or MSVC C++ Build Tools."
+        Write-Host "Detected GCC $gccVersion. FiberAPI requires GCC 12+."
     } else {
         Write-Host "No supported C++ compiler was detected."
     }
@@ -59,10 +86,10 @@ if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
         Read-Host "Upgrade/install C++ Build Tools automatically now? (Y/N)"
     }
     if ($answer -notmatch "^(?i)y(es)?$") {
-        throw "Compiler upgrade cancelled. FiberAPI requires GCC 12+ or MSVC C++ Build Tools."
+        throw "Compiler upgrade cancelled. FiberAPI requires GCC 12+."
     }
-    Install-CppToolchain
-    Write-Host "C++ Build Tools installed. Open a new terminal before running fiber dev."
+    Install-Msys2Gcc
+    Write-Host "Modern GCC installed. Open a new terminal before running fiber dev."
 }
 $localSource = if ($PSScriptRoot) { Join-Path $PSScriptRoot "fiber.ps1" } else { $null }
 $source = Join-Path $InstallDirectory "fiber.ps1"
