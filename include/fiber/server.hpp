@@ -248,9 +248,11 @@ private:
                 connection.used += static_cast<std::size_t>(result);
                 Request request;
                 if (parse_request(connection, request)) {
+#ifdef FIBER_ENABLE_REQUEST_LOG
                     std::printf("%s %.*s\n", method_to_string(request.method).data(),
                                 static_cast<int>(request.path.size()), request.path.data());
                     std::fflush(stdout);
+#endif
                     Context context(request);
                     auto task = router_.handle(context);
                     task.result();
@@ -272,7 +274,10 @@ private:
                 if (connection.sent < connection.output.size()) {
                     submit_send(ring, connection, slot);
                 } else {
-                    close_connection(connection);
+                    connection.output.clear();
+                    connection.used = 0;
+                    connection.sent = 0;
+                    submit_receive(ring, connection, slot);
                 }
             }
         }

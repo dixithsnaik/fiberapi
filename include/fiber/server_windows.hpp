@@ -250,9 +250,11 @@ private:
             connection->used += bytes;
             Request request;
             if (parse_request(*connection, request)) {
+#ifdef FIBER_ENABLE_REQUEST_LOG
                 std::printf("%s %.*s\n", method_to_string(request.method).data(),
                             static_cast<int>(request.path.size()), request.path.data());
                 std::fflush(stdout);
+#endif
                 Context context(request);
                 auto task = router_.handle(context);
                 task.result();
@@ -284,7 +286,12 @@ private:
                 close_connection(connection);
             }
         } else {
-            close_connection(connection);
+            connection->output.clear();
+            connection->used = 0;
+            connection->sent = 0;
+            if (!post_receive(*connection)) {
+                close_connection(connection);
+            }
         }
     }
 

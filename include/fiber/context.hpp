@@ -116,7 +116,7 @@ public:
         wire.append(response_.content_type);
         wire.append("\r\nContent-Length: ");
         wire.append(std::to_string(response_.body.size()));
-        wire.append("\r\nConnection: close\r\n");
+        wire.append("\r\nConnection: keep-alive\r\n");
         for (const auto& [name, value] : res_headers) {
             wire.append(name);
             wire.append(": ");

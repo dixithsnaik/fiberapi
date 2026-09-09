@@ -56,6 +56,8 @@ The CLI uses a shallow sparse Git checkout and fetches only the template, FiberA
 
 `fiber dev` builds a Debug executable, starts it, watches `main.cpp`, `CMakeLists.txt`, and the local `fiber/` dependency, then rebuilds and restarts after changes. Press `Ctrl-C` to stop it.
 
+Responses use HTTP keep-alive by default, and per-request logging is disabled in Release builds unless `FIBER_ENABLE_REQUEST_LOG` is defined.
+
 Complete newcomer workflow:
 
 ```powershell
