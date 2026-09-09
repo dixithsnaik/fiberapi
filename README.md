@@ -27,11 +27,11 @@ winget install Microsoft.VisualStudio.2022.Community --override "--wait --passiv
 
 ## Windows CLI
 
-Install the native CLI from the latest GitHub Release. Download `fiber-install.cmd` and double-click it. It downloads and runs the PowerShell installer automatically; no ZIP archive or terminal command is required.
+Install the native CLI and Windows C++ build tools from the latest GitHub Release. Download `fiber-install.cmd` and double-click it. It installs Visual Studio 2022 Desktop C++ when no compiler is detected, then installs the CLI; no ZIP archive or terminal command is required.
 
 Release page: https://github.com/dixithsnaik/fiberapi/releases/latest
 
-Open a new PowerShell window after installation. The CLI can clone an application template from Git:
+Open a new VS Code window after installation so the new compiler and PATH are loaded. The CLI can clone an application template from Git:
 
 ```powershell
 fiber new notes-api --Template https://github.com/your-name/fiber-notes-template.git
