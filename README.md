@@ -34,7 +34,7 @@ fiber build
 fiber start
 ```
 
-The template repository should contain the application `CMakeLists.txt`, `main.cpp`, and its small `fiber/` dependency bundle. The CLI does not clone the full FiberAPI framework repository into the application.
+The CLI uses a shallow sparse Git checkout and fetches only the template, FiberAPI headers, and parser files. It does not download or copy the full FiberAPI framework repository into the application.
 
 Complete newcomer workflow:
 

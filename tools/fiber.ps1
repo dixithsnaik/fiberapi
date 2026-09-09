@@ -43,7 +43,10 @@ switch ($Command) {
         $templateUrl = if ($Template) { $Template } elseif ($env:FIBER_TEMPLATE_REPO) { $env:FIBER_TEMPLATE_REPO } else { $defaultTemplate }
         if ($templateUrl -eq $defaultTemplate -and -not $Template -and -not $env:FIBER_TEMPLATE_REPO) {
             $temporaryDirectory = Join-Path $env:TEMP ("fiber-template-" + [guid]::NewGuid())
-            git clone --depth 1 $templateUrl $temporaryDirectory
+            git clone --depth 1 --filter=blob:none --no-checkout $templateUrl $temporaryDirectory
+            git -C $temporaryDirectory sparse-checkout init --cone
+            git -C $temporaryDirectory sparse-checkout set templates/notes include/fiber third_party
+            git -C $temporaryDirectory read-tree -mu HEAD
             New-Item (Join-Path $ProjectName "fiber\include") -ItemType Directory -Force | Out-Null
             New-Item (Join-Path $ProjectName "fiber\third_party") -ItemType Directory -Force | Out-Null
             New-Item (Join-Path $ProjectName "fiber\lib") -ItemType Directory -Force | Out-Null

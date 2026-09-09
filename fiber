@@ -142,7 +142,10 @@ new_project() {
     fi
     local temporary_repo
     temporary_repo="$(mktemp -d)"
-    git clone --depth 1 "$template_repo" "$temporary_repo/source"
+    git clone --depth 1 --filter=blob:none --no-checkout "$template_repo" "$temporary_repo/source"
+    git -C "$temporary_repo/source" sparse-checkout init --cone
+    git -C "$temporary_repo/source" sparse-checkout set templates/notes include/fiber third_party
+    git -C "$temporary_repo/source" read-tree -mu HEAD
     mkdir -p "$project_name/fiber/include" "$project_name/fiber/third_party" "$project_name/fiber/lib"
     cp "$temporary_repo/source/templates/notes/CMakeLists.txt" "$project_name/CMakeLists.txt"
     cp "$temporary_repo/source/templates/notes/main.cpp" "$project_name/main.cpp"
