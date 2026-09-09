@@ -11,6 +11,16 @@ param(
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
 
+function Get-CMakeGeneratorArguments {
+    if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
+        return @("-G", "Ninja")
+    }
+    if (Get-Command cl.exe -ErrorAction SilentlyContinue) {
+        return @("-G", "Visual Studio 17 2022", "-A", "x64")
+    }
+    throw "No C++ build tool found. Install Visual Studio 2022 Desktop C++ or Ninja, then reopen PowerShell."
+}
+
 function Show-Help {
     @"
 FiberAPI Windows CLI
@@ -63,13 +73,20 @@ switch ($Command) {
         Write-Host "Run: cd $ProjectName; fiber build"
     }
     "build" {
-        cmake -S $projectDirectory -B $buildDirectory -G Ninja -DCMAKE_BUILD_TYPE=Debug
+        $generatorArguments = Get-CMakeGeneratorArguments
+        cmake -S $projectDirectory -B $buildDirectory @generatorArguments -DCMAKE_BUILD_TYPE=Debug
         cmake --build $buildDirectory --parallel
     }
     "start" {
-        cmake -S $projectDirectory -B $buildDirectory -G Ninja -DCMAKE_BUILD_TYPE=Debug
+        $generatorArguments = Get-CMakeGeneratorArguments
+        cmake -S $projectDirectory -B $buildDirectory @generatorArguments -DCMAKE_BUILD_TYPE=Debug
         cmake --build $buildDirectory --parallel
-        & (Join-Path $buildDirectory "fiber_server.exe")
+        $executable = Join-Path $buildDirectory "fiber_server.exe"
+        if (-not (Test-Path $executable)) {
+            $executable = Join-Path $buildDirectory "Debug\fiber_server.exe"
+        }
+        if (-not (Test-Path $executable)) { throw "fiber_server.exe was not produced by the build" }
+        & $executable
     }
     "clean" {
         Remove-Item $buildDirectory -Recurse -Force -ErrorAction SilentlyContinue
