@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.3.6"
+$fiberVersion = "0.3.7"
 
 # Prefer the installed MSYS2 UCRT64 toolchain even when this terminal was
 # created by an older VS Code process with a stale PATH snapshot.

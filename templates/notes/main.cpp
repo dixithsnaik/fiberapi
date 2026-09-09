@@ -1,13 +1,13 @@
 #include <fiber/router.hpp>
 #include <fiber/server.hpp>
 
+#include <cstdio>
 #include <string>
 
 using namespace fiber;
 
 int main() {
     Router app;
-
     app.get("/health", [](Context& ctx) {
         ctx.json(R"({"ok":true})");
     });
@@ -18,6 +18,7 @@ int main() {
                  std::string(ctx.request().body) + R"("})");
     });
 
+    printf("Server running on http://localhost:8080\n");
     Server server(app, 8080);
     server.run();
 }

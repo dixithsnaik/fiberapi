@@ -16,6 +16,7 @@
 #include <charconv>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -249,6 +250,9 @@ private:
             connection->used += bytes;
             Request request;
             if (parse_request(*connection, request)) {
+                std::printf("%s %.*s\n", method_to_string(request.method).data(),
+                            static_cast<int>(request.path.size()), request.path.data());
+                std::fflush(stdout);
                 Context context(request);
                 auto task = router_.handle(context);
                 task.result();

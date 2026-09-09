@@ -15,6 +15,7 @@
 #include <cerrno>
 #include <charconv>
 #include <chrono>
+#include <cstdio>
 #include <cstring>
 #include <cstdint>
 #include <fcntl.h>
@@ -247,6 +248,9 @@ private:
                 connection.used += static_cast<std::size_t>(result);
                 Request request;
                 if (parse_request(connection, request)) {
+                    std::printf("%s %.*s\n", method_to_string(request.method).data(),
+                                static_cast<int>(request.path.size()), request.path.data());
+                    std::fflush(stdout);
                     Context context(request);
                     auto task = router_.handle(context);
                     task.result();
