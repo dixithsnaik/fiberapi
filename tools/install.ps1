@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.2.9"
+$installerVersion = "0.3.0"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {

@@ -10,11 +10,23 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.2.9"
+$fiberVersion = "0.3.0"
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
         return @("-G", "Ninja")
+    }
+    $gxx = Get-Command g++.exe -ErrorAction SilentlyContinue
+    $mingwMake = Get-Command mingw32-make.exe -ErrorAction SilentlyContinue
+    if ($gxx -and $mingwMake) {
+        $versionText = (& $gxx.Source --version | Select-Object -First 1)
+        if ($versionText -match "(\d+)\.") {
+            $gccMajor = [int]$Matches[1]
+            if ($gccMajor -ge 12) {
+                return @("-G", "MinGW Makefiles")
+            }
+            throw "GCC $gccMajor is too old. FiberAPI requires GCC 12+ for C++20."
+        }
     }
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
     $visualStudio = if (Test-Path $vswhere) {
@@ -25,7 +37,7 @@ function Get-CMakeGeneratorArguments {
     if (($visualStudio -and (Test-Path $visualStudio)) -or (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
         return @("-G", "Visual Studio 17 2022", "-A", "x64")
     }
-    throw "No C++ build tool found. Install Visual Studio 2022 with Desktop C++ or install Ninja, then reopen PowerShell."
+    throw "No supported C++ build tool found. Install Visual Studio Build Tools, Ninja, or MinGW GCC 12+, then reopen PowerShell."
 }
 
 function Show-Help {
