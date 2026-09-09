@@ -5,7 +5,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.2.7"
+$installerVersion = "0.2.8"
 
 function Test-CppToolchain {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -13,8 +13,8 @@ function Test-CppToolchain {
     }
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
     if (Test-Path $vswhere) {
-        $installationPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
-        if ($installationPath -and (Test-Path $installationPath)) {
+        $msbuild = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find MSBuild\**\Bin\MSBuild.exe 2>$null | Select-Object -First 1
+        if ($msbuild -and (Test-Path $msbuild)) {
             return $true
         }
     }

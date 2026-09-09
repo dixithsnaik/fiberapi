@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.2.7"
+$fiberVersion = "0.2.8"
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -18,7 +18,7 @@ function Get-CMakeGeneratorArguments {
     }
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
     $visualStudio = if (Test-Path $vswhere) {
-        & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
+        & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find MSBuild\**\Bin\MSBuild.exe 2>$null | Select-Object -First 1
     } else {
         $null
     }
