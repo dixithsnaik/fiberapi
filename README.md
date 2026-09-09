@@ -17,7 +17,13 @@ sudo apt update
 sudo apt install -y build-essential cmake ninja-build liburing-dev
 ```
 
-On Windows, install Visual Studio 2022 with the Desktop C++ workload, CMake, and Ninja. Build from PowerShell or the Visual Studio Developer PowerShell; the Windows backend uses IOCP and does not require WSL.
+On Windows, install Visual Studio 2022 with the Desktop C++ workload, or install Ninja plus a C++ compiler. The Windows backend uses IOCP and does not require WSL.
+
+For an easy Visual Studio installation:
+
+```powershell
+winget install Microsoft.VisualStudio.2022.Community --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
+```
 
 ## Windows CLI
 

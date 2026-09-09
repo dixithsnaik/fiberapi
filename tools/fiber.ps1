@@ -16,10 +16,15 @@ function Get-CMakeGeneratorArguments {
         return @("-G", "Ninja")
     }
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-    if ((Test-Path $vswhere) -or (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
+    $visualStudio = if (Test-Path $vswhere) {
+        & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath 2>$null
+    } else {
+        $null
+    }
+    if (($visualStudio -and (Test-Path $visualStudio)) -or (Get-Command cl.exe -ErrorAction SilentlyContinue)) {
         return @("-G", "Visual Studio 17 2022", "-A", "x64")
     }
-    throw "No C++ build tool found. Install Visual Studio 2022 Desktop C++ or Ninja, then reopen PowerShell."
+    throw "No C++ build tool found. Install Visual Studio 2022 with Desktop C++ or install Ninja, then reopen PowerShell."
 }
 
 function Show-Help {
