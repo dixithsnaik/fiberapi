@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.3.4"
+$installerVersion = "0.3.5"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {
@@ -69,8 +69,10 @@ function Install-Msys2Gcc {
     }
     $ucrtBin = "C:\msys64\ucrt64\bin"
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-    $pathEntries = @($userPath -split ";" | Where-Object { $_ -and $_ -ne $ucrtBin })
-    [Environment]::SetEnvironmentVariable("Path", (($pathEntries + $ucrtBin) -join ";"), "User")
+    $pathEntries = @($userPath -split ";" | Where-Object {
+        $_ -and $_ -ne $ucrtBin -and $_ -notmatch "(?i)(mingw|msys64)[\\/]mingw(32|64)[\\/]bin"
+    })
+    [Environment]::SetEnvironmentVariable("Path", (($ucrtBin + $pathEntries) -join ";"), "User")
     $env:Path = "$ucrtBin;$env:Path"
 }
 
