@@ -21,10 +21,12 @@ On Windows, install Visual Studio 2022 with the Desktop C++ workload, CMake, and
 
 ## Windows CLI
 
-Install the native PowerShell CLI from a local FiberAPI checkout:
+Install the native PowerShell CLI from the latest GitHub Release. This downloads one PowerShell installer, not a ZIP archive:
 
 ```powershell
-.\tools\install.ps1
+irm https://github.com/dixithsnaik/fiberapi/releases/latest/download/install.ps1 -OutFile fiber-install.ps1
+powershell -ExecutionPolicy Bypass -File .\fiber-install.ps1
+Remove-Item .\fiber-install.ps1
 ```
 
 Open a new PowerShell window after installation. The CLI can clone an application template from Git:
@@ -37,6 +39,18 @@ fiber start
 ```
 
 The template repository should contain the application `CMakeLists.txt`, `main.cpp`, and its small `fiber/` dependency bundle. The CLI does not clone the full FiberAPI framework repository into the application.
+
+Complete newcomer workflow:
+
+```powershell
+irm https://github.com/dixithsnaik/fiberapi/releases/latest/download/install.ps1 -OutFile fiber-install.ps1
+powershell -ExecutionPolicy Bypass -File .\fiber-install.ps1
+Remove-Item .\fiber-install.ps1
+fiber new notes-api --Template https://github.com/your-name/fiber-notes-template.git
+cd notes-api
+fiber build
+fiber start
+```
 
 You can set a default template URL:
 

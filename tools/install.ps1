@@ -1,11 +1,17 @@
 param(
-    [string]$InstallDirectory = "$HOME\AppData\Local\FiberAPI\bin"
+    [string]$InstallDirectory = "$HOME\AppData\Local\FiberAPI\bin",
+    [string]$RawBaseUrl = "https://raw.githubusercontent.com/dixithsnaik/fiberapi/main/tools"
 )
 
 $ErrorActionPreference = "Stop"
-$source = Join-Path $PSScriptRoot "fiber.ps1"
+$localSource = if ($PSScriptRoot) { Join-Path $PSScriptRoot "fiber.ps1" } else { $null }
+$source = Join-Path $InstallDirectory "fiber.ps1"
 New-Item -ItemType Directory -Force $InstallDirectory | Out-Null
-Copy-Item $source (Join-Path $InstallDirectory "fiber.ps1") -Force
+if ($localSource -and (Test-Path $localSource)) {
+    Copy-Item $localSource $source -Force
+} else {
+    Invoke-WebRequest "$RawBaseUrl/fiber.ps1" -OutFile $source
+}
 
 $shim = Join-Path $InstallDirectory "fiber.cmd"
 Set-Content -Path $shim -Value '@echo off
