@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.3.2"
+$installerVersion = "0.3.3"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {
@@ -49,14 +49,16 @@ function Install-CppToolchain {
 }
 
 function Install-Msys2Gcc {
-    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
-        throw "winget is unavailable. Install MSYS2 manually from https://www.msys2.org/"
-    }
-    winget install MSYS2.MSYS2 --accept-source-agreements --accept-package-agreements
-    if ($LASTEXITCODE -ne 0) {
-        throw "MSYS2 installation failed with exit code $LASTEXITCODE"
-    }
     $bash = "C:\msys64\usr\bin\bash.exe"
+    if (-not (Test-Path $bash)) {
+        if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+            throw "winget is unavailable. Install MSYS2 manually from https://www.msys2.org/"
+        }
+        winget install --id MSYS2.MSYS2 --exact --accept-source-agreements --accept-package-agreements
+        if ($LASTEXITCODE -ne 0 -and -not (Test-Path $bash)) {
+            throw "MSYS2 installation failed with exit code $LASTEXITCODE"
+        }
+    }
     if (-not (Test-Path $bash)) {
         throw "MSYS2 was installed in an unexpected location. Install the UCRT64 toolchain manually."
     }
