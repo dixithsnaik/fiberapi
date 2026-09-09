@@ -31,6 +31,18 @@ Install the native CLI and Windows C++ build tools from the latest GitHub Releas
 
 Release page: https://github.com/dixithsnaik/fiberapi/releases/latest
 
+If the installer finds an old GCC or no supported compiler, it asks whether to upgrade:
+
+```text
+Upgrade/install C++ Build Tools automatically now? (Y/N)
+```
+
+Answer `Y` to install through `winget`, or use unattended mode:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1 -UpgradeCompiler
+```
+
 VS Code is optional. Close the current terminal and open a new PowerShell or Command Prompt window so the new compiler and PATH are loaded. The CLI can clone an application template from Git:
 
 ```powershell

@@ -1,11 +1,12 @@
 param(
     [string]$InstallDirectory = "$HOME\AppData\Local\FiberAPI\bin",
     [string]$RawBaseUrl = "",
-    [switch]$SkipBuildTools
+    [switch]$SkipBuildTools,
+    [switch]$UpgradeCompiler
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.3.0"
+$installerVersion = "0.3.1"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {
@@ -26,18 +27,42 @@ function Test-CppToolchain {
     return [bool](Get-Command cl.exe -ErrorAction SilentlyContinue)
 }
 
-if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
+function Get-GccVersion {
+    $gxx = Get-Command g++.exe -ErrorAction SilentlyContinue
+    if (-not $gxx) { return $null }
+    $versionText = & $gxx.Source --version | Select-Object -First 1
+    if ($versionText -match "(\d+)\.") { return [int]$Matches[1] }
+    return $null
+}
+
+function Install-CppToolchain {
     if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
-        throw "No C++ toolchain found. Install Visual Studio 2022 Desktop C++ manually, then run the installer again."
+        throw "winget is unavailable. Install Visual Studio Build Tools manually."
     }
-    Write-Host "Installing Visual Studio 2022 Desktop C++ workload..."
+    Write-Host "Installing Visual Studio C++ Build Tools..."
     winget install Microsoft.VisualStudio.2022.BuildTools `
         --accept-source-agreements --accept-package-agreements `
         --override "--wait --passive --add Microsoft.VisualStudio.Workload.NativeDesktop --includeRecommended"
     if ($LASTEXITCODE -ne 0) {
-        throw "Visual Studio installation failed with exit code $LASTEXITCODE"
+        throw "C++ Build Tools installation failed with exit code $LASTEXITCODE"
     }
-    Write-Host "Visual Studio C++ tools installed. Open a new terminal before running fiber dev."
+}
+
+if (-not $SkipBuildTools -and -not (Test-CppToolchain)) {
+    $gccVersion = Get-GccVersion
+    if ($gccVersion) {
+        Write-Host "Detected GCC $gccVersion. FiberAPI requires GCC 12+ or MSVC C++ Build Tools."
+    } else {
+        Write-Host "No supported C++ compiler was detected."
+    }
+    $answer = if ($UpgradeCompiler) { "Y" } else {
+        Read-Host "Upgrade/install C++ Build Tools automatically now? (Y/N)"
+    }
+    if ($answer -notmatch "^(?i)y(es)?$") {
+        throw "Compiler upgrade cancelled. FiberAPI requires GCC 12+ or MSVC C++ Build Tools."
+    }
+    Install-CppToolchain
+    Write-Host "C++ Build Tools installed. Open a new terminal before running fiber dev."
 }
 $localSource = if ($PSScriptRoot) { Join-Path $PSScriptRoot "fiber.ps1" } else { $null }
 $source = Join-Path $InstallDirectory "fiber.ps1"
