@@ -1,0 +1,13 @@
+/home/dixit/.local/lib/libpicohttpparser.a
+/home/dixit/.local/include/fiber/request.hpp
+/home/dixit/.local/include/fiber/router.hpp
+/home/dixit/.local/include/fiber/http_method.hpp
+/home/dixit/.local/include/fiber/response.hpp
+/home/dixit/.local/include/fiber/extract.hpp
+/home/dixit/.local/include/fiber/server.hpp
+/home/dixit/.local/include/fiber/context.hpp
+/home/dixit/.local/include/fiber/task.hpp
+/home/dixit/.local/include/fiber/picohttpparser.h
+/home/dixit/.local/lib/cmake/FiberAPI/FiberAPITargets.cmake
+/home/dixit/.local/lib/cmake/FiberAPI/FiberAPITargets-release.cmake
+/home/dixit/.local/lib/cmake/FiberAPI/FiberAPIConfig.cmake

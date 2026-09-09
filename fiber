@@ -1,0 +1,215 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+while [[ -L "$SCRIPT_PATH" ]]; do
+    SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ "$SCRIPT_PATH" = /* ]] || SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+ROOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+PROJECT_DIR="${FIBER_PROJECT_DIR:-${ROOT_DIR}}"
+if [[ -f "$PWD/CMakeLists.txt" ]]; then
+    PROJECT_DIR="$PWD"
+fi
+BUILD_DIR="${FIBER_BUILD_DIR:-${PROJECT_DIR}/build}"
+BUILD_TYPE="${FIBER_BUILD_TYPE:-Release}"
+GENERATOR="${FIBER_GENERATOR:-Ninja}"
+
+configure() {
+    cmake -S "$PROJECT_DIR" -B "$BUILD_DIR" -G "$GENERATOR" \
+        -DCMAKE_BUILD_TYPE="$BUILD_TYPE" \
+        -DBUILD_TESTING=ON
+}
+
+build() {
+    configure
+    cmake --build "$BUILD_DIR" --parallel "${FIBER_JOBS:-$(nproc)}"
+}
+
+usage() {
+    cat <<EOF
+FiberAPI project command
+
+Usage:
+  ./fiber build       Configure and compile the project
+    ./fiber dev         Debug build, watch files, and restart the server
+  ./fiber start       Build and run fiber_server
+  ./fiber test        Build and run tests
+  ./fiber clean       Remove the build directory
+    ./fiber install     Install FiberAPI and the fiber command
+    ./fiber bundle DIR  Create a small vendored dependency bundle
+    ./fiber new NAME    Create a project from a Git template
+
+Environment overrides:
+  FIBER_BUILD_DIR    Build directory (default: ./build)
+  FIBER_BUILD_TYPE   CMake build type (default: Release)
+  FIBER_GENERATOR    CMake generator (default: Ninja)
+  FIBER_JOBS         Parallel build jobs (default: nproc)
+    FIBER_TEMPLATE_REPO Git URL used by fiber new
+EOF
+}
+
+source_snapshot() {
+    {
+        printf '%s\n' "$PROJECT_DIR/CMakeLists.txt"
+        find "$PROJECT_DIR/cmake" "$PROJECT_DIR/include" "$PROJECT_DIR/examples" \
+            "$PROJECT_DIR/src" "$PROJECT_DIR/third_party" "$PROJECT_DIR/main.cpp" \
+            -type f -printf '%T@ %p\n' 2>/dev/null || true
+    } | LC_ALL=C sort
+}
+
+stop_server() {
+    if [[ -n "${SERVER_PID:-}" ]] && kill -0 "$SERVER_PID" 2>/dev/null; then
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
+    fi
+    SERVER_PID=""
+}
+
+start_server() {
+    "$BUILD_DIR/fiber_server" &
+    SERVER_PID=$!
+    echo "FiberAPI server running (pid $SERVER_PID)"
+}
+
+dev() {
+    BUILD_TYPE=Debug build
+    trap stop_server EXIT
+    trap 'stop_server; exit 130' INT TERM
+    start_server
+    local previous_snapshot current_snapshot
+    previous_snapshot="$(source_snapshot)"
+    echo "Watching for changes. Press Ctrl-C to stop."
+    while true; do
+        sleep "${FIBER_WATCH_INTERVAL:-1}"
+        current_snapshot="$(source_snapshot)"
+        if [[ "$current_snapshot" == "$previous_snapshot" ]]; then
+            continue
+        fi
+
+        previous_snapshot="$current_snapshot"
+        echo "Change detected; rebuilding..."
+        stop_server
+        if BUILD_TYPE=Debug build; then
+            start_server
+        else
+            echo "Build failed; waiting for the next change."
+        fi
+    done
+}
+
+install_cli() {
+    build
+    cmake --install "$BUILD_DIR" --prefix "$HOME/.local"
+    mkdir -p "$HOME/.local/bin"
+    ln -sfn "$ROOT_DIR/fiber" "$HOME/.local/bin/fiber"
+    case ":${PATH}:" in
+        *":$HOME/.local/bin:"*) ;;
+        *)
+            for profile in "$HOME/.bashrc" "$HOME/.zshrc"; do
+                if [[ -f "$profile" ]] && ! grep -Fqx 'export PATH="$HOME/.local/bin:$PATH"' "$profile"; then
+                    printf '\nexport PATH="$HOME/.local/bin:$PATH"\n' >> "$profile"
+                fi
+            done
+            export PATH="$HOME/.local/bin:$PATH"
+            ;;
+    esac
+    echo "Installed fiber to $HOME/.local/bin/fiber"
+    echo "Restart your shell or run: export PATH=\"\$HOME/.local/bin:\$PATH\""
+}
+
+new_project() {
+    local project_name="${2:-}"
+    if [[ -z "$project_name" ]]; then
+        echo "Usage: fiber new PROJECT_NAME" >&2
+        exit 2
+    fi
+    if [[ -e "$project_name" ]]; then
+        echo "Refusing to overwrite existing path: $project_name" >&2
+        exit 1
+    fi
+    local template_repo="${FIBER_TEMPLATE_REPO:-}"
+    if [[ "${3:-}" == "--template" ]]; then
+        template_repo="${4:-}"
+    fi
+    if [[ -n "$template_repo" ]]; then
+        git clone --depth 1 "$template_repo" "$project_name"
+        echo "Created $project_name from $template_repo"
+        echo "Run: cd $project_name && fiber dev"
+        return
+    fi
+    mkdir -p "$project_name"
+    cp "$ROOT_DIR/templates/notes/CMakeLists.txt" "$project_name/CMakeLists.txt"
+    cp "$ROOT_DIR/templates/notes/main.cpp" "$project_name/main.cpp"
+    bundle_dependency bundle "$project_name"
+    echo "Created $project_name"
+    echo "Run: cd $project_name && fiber dev"
+}
+
+bundle_dependency() {
+    local destination="${2:-}"
+    if [[ -z "$destination" ]]; then
+        echo "Usage: fiber bundle DESTINATION" >&2
+        exit 2
+    fi
+    BUILD_TYPE=Release build
+    local bundle_root="$destination/fiber"
+    local archive=""
+    for candidate in \
+        "$BUILD_DIR/libpicohttpparser.a" \
+        "$BUILD_DIR/picohttpparser.lib" \
+        "$BUILD_DIR/Release/picohttpparser.lib"; do
+        if [[ -f "$candidate" ]]; then
+            archive="$candidate"
+            break
+        fi
+    done
+    if [[ -z "$archive" ]]; then
+        echo "Could not find the built picohttpparser library in $BUILD_DIR" >&2
+        exit 1
+    fi
+    rm -rf "$bundle_root"
+    mkdir -p "$bundle_root/include" "$bundle_root/third_party" "$bundle_root/lib"
+    cp -R "$ROOT_DIR/include/fiber" "$bundle_root/include/"
+    cp "$ROOT_DIR/third_party/picohttpparser.h" "$bundle_root/third_party/"
+    cp "$archive" "$bundle_root/lib/$(basename "$archive")"
+    echo "Created vendored FiberAPI dependency at $bundle_root"
+}
+
+case "${1:-}" in
+    build)
+        build
+        ;;
+    dev)
+        dev
+        ;;
+    start)
+        build
+        exec "$BUILD_DIR/fiber_server"
+        ;;
+    test)
+        build
+        ctest --test-dir "$BUILD_DIR" --output-on-failure
+        ;;
+    install)
+        install_cli
+        ;;
+    new)
+        new_project "$@"
+        ;;
+    bundle)
+        bundle_dependency "$@"
+        ;;
+    clean)
+        rm -rf "$BUILD_DIR"
+        ;;
+    -h|--help|help|"")
+        usage
+        ;;
+    *)
+        echo "Unknown command: $1" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
