@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.3.3"
+$fiberVersion = "0.3.4"
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {
@@ -107,7 +107,7 @@ function Stop-DevServer {
 function Start-DevServer {
     $executable = Get-ServerPath
     if (-not $executable) { throw "fiber_server.exe was not produced by the build" }
-    $script:serverProcess = Start-Process -FilePath $executable -PassThru
+    $script:serverProcess = Start-Process -FilePath $executable -NoNewWindow -PassThru
     Write-Host "FiberAPI server running (pid $($script:serverProcess.Id))"
 }
 
