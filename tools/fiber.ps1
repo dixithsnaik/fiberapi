@@ -10,7 +10,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 $defaultTemplate = "https://github.com/dixithsnaik/fiberapi.git"
-$fiberVersion = "0.3.5"
+$fiberVersion = "0.3.6"
+
+# Prefer the installed MSYS2 UCRT64 toolchain even when this terminal was
+# created by an older VS Code process with a stale PATH snapshot.
+$ucrt64Bin = "C:\msys64\ucrt64\bin"
+if (Test-Path (Join-Path $ucrt64Bin "g++.exe")) {
+    $env:Path = "$ucrt64Bin;$env:Path"
+}
 
 function Get-CMakeGeneratorArguments {
     if (Get-Command ninja.exe -ErrorAction SilentlyContinue) {

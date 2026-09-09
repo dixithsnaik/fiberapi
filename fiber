@@ -16,7 +16,7 @@ BUILD_DIR="${FIBER_BUILD_DIR:-${PROJECT_DIR}/build}"
 BUILD_TYPE="${FIBER_BUILD_TYPE:-Release}"
 GENERATOR="${FIBER_GENERATOR:-Ninja}"
 DEFAULT_TEMPLATE_REPO="https://github.com/dixithsnaik/fiberapi.git"
-FIBER_VERSION="0.3.5"
+FIBER_VERSION="0.3.6"
 
 configure() {
     cmake -S "$PROJECT_DIR" -B "$BUILD_DIR" -G "$GENERATOR" \

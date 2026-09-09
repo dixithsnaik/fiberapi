@@ -6,7 +6,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$installerVersion = "0.3.5"
+$installerVersion = "0.3.6"
 $cliUrl = if ($RawBaseUrl) {
     "$RawBaseUrl/fiber.ps1"
 } else {
@@ -135,6 +135,10 @@ $pathEntries = @($userPath -split ";" | Where-Object {
 })
 [Environment]::SetEnvironmentVariable("Path", (($pathEntries + $InstallDirectory) -join ";"), "User")
 $env:Path = "$InstallDirectory;$env:Path"
+$ucrt64Bin = "C:\msys64\ucrt64\bin"
+if (Test-Path (Join-Path $ucrt64Bin "g++.exe")) {
+    $env:Path = "$ucrt64Bin;$env:Path"
+}
 
 $profileDirectory = Split-Path -Parent $PROFILE
 if (-not (Test-Path $profileDirectory)) {
