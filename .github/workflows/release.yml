@@ -21,3 +21,4 @@ jobs:
           files: |
             tools/install.ps1
             tools/fiber.ps1
+            tools/fiber-install.cmd
