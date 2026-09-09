@@ -29,6 +29,7 @@ FiberAPI Windows CLI
 Usage:
   fiber new NAME --Template URL   Clone a Git project template
   fiber build                     Build the current project
+    fiber dev                       Debug build with automatic refresh
   fiber start                     Build and run fiber_server.exe
   fiber clean                     Remove the build directory
   fiber help                      Show this help
@@ -46,6 +47,47 @@ if ($Help -or $Command -in @("help", "--help", "-h")) {
 
 $projectDirectory = (Get-Location).Path
 $buildDirectory = if ($env:FIBER_BUILD_DIR) { $env:FIBER_BUILD_DIR } else { $BuildDirectory }
+$serverProcess = $null
+
+function Invoke-Build {
+    param([string]$Configuration = "Debug")
+    $generatorArguments = Get-CMakeGeneratorArguments
+    cmake -S $projectDirectory -B $buildDirectory @generatorArguments "-DCMAKE_BUILD_TYPE=$Configuration"
+    if ($LASTEXITCODE -ne 0) { return $false }
+    cmake --build $buildDirectory --parallel
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Get-SourceSnapshot {
+    $files = @(
+        Get-ChildItem $projectDirectory -File -ErrorAction SilentlyContinue
+        Get-ChildItem (Join-Path $projectDirectory "fiber") -File -Recurse -ErrorAction SilentlyContinue
+    ) | Where-Object { $_.FullName -notmatch "[\\/]build[\\/]" } | Sort-Object FullName
+    return (($files | ForEach-Object { "$($_.FullName):$($_.LastWriteTimeUtc.Ticks):$($_.Length)" }) -join "`n")
+}
+
+function Get-ServerPath {
+    $paths = @(
+        (Join-Path $buildDirectory "fiber_server.exe"),
+        (Join-Path $buildDirectory "Debug\fiber_server.exe")
+    )
+    return $paths | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+
+function Stop-DevServer {
+    if ($null -ne $script:serverProcess -and -not $script:serverProcess.HasExited) {
+        Stop-Process -Id $script:serverProcess.Id -Force -ErrorAction SilentlyContinue
+        $script:serverProcess.WaitForExit()
+    }
+    $script:serverProcess = $null
+}
+
+function Start-DevServer {
+    $executable = Get-ServerPath
+    if (-not $executable) { throw "fiber_server.exe was not produced by the build" }
+    $script:serverProcess = Start-Process -FilePath $executable -PassThru
+    Write-Host "FiberAPI server running (pid $($script:serverProcess.Id))"
+}
 
 switch ($Command) {
     "new" {
@@ -74,19 +116,35 @@ switch ($Command) {
         Write-Host "Run: cd $ProjectName; fiber build"
     }
     "build" {
-        $generatorArguments = Get-CMakeGeneratorArguments
-        cmake -S $projectDirectory -B $buildDirectory @generatorArguments -DCMAKE_BUILD_TYPE=Debug
-        cmake --build $buildDirectory --parallel
+        if (-not (Invoke-Build)) { exit 1 }
+    }
+    "dev" {
+        if (-not (Invoke-Build "Debug")) { exit 1 }
+        try {
+            Start-DevServer
+            $snapshot = Get-SourceSnapshot
+            Write-Host "Watching for changes. Press Ctrl-C to stop."
+            while ($true) {
+                Start-Sleep -Seconds 1
+                $currentSnapshot = Get-SourceSnapshot
+                if ($currentSnapshot -eq $snapshot) { continue }
+                $snapshot = $currentSnapshot
+                Write-Host "Change detected; rebuilding..."
+                Stop-DevServer
+                if (Invoke-Build "Debug") {
+                    Start-DevServer
+                } else {
+                    Write-Warning "Build failed; waiting for the next change."
+                }
+            }
+        } finally {
+            Stop-DevServer
+        }
     }
     "start" {
-        $generatorArguments = Get-CMakeGeneratorArguments
-        cmake -S $projectDirectory -B $buildDirectory @generatorArguments -DCMAKE_BUILD_TYPE=Debug
-        cmake --build $buildDirectory --parallel
-        $executable = Join-Path $buildDirectory "fiber_server.exe"
-        if (-not (Test-Path $executable)) {
-            $executable = Join-Path $buildDirectory "Debug\fiber_server.exe"
-        }
-        if (-not (Test-Path $executable)) { throw "fiber_server.exe was not produced by the build" }
+        if (-not (Invoke-Build)) { exit 1 }
+        $executable = Get-ServerPath
+        if (-not $executable) { throw "fiber_server.exe was not produced by the build" }
         & $executable
     }
     "clean" {

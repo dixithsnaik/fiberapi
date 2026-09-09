@@ -30,18 +30,20 @@ Open a new PowerShell window after installation. The CLI can clone an applicatio
 ```powershell
 fiber new notes-api --Template https://github.com/your-name/fiber-notes-template.git
 cd notes-api
-fiber build
+fiber dev
 fiber start
 ```
 
 The CLI uses a shallow sparse Git checkout and fetches only the template, FiberAPI headers, and parser files. It does not download or copy the full FiberAPI framework repository into the application.
+
+`fiber dev` builds a Debug executable, starts it, watches `main.cpp`, `CMakeLists.txt`, and the local `fiber/` dependency, then rebuilds and restarts after changes. Press `Ctrl-C` to stop it.
 
 Complete newcomer workflow:
 
 ```powershell
 fiber new notes-api --Template https://github.com/your-name/fiber-notes-template.git
 cd notes-api
-fiber build
+fiber dev
 fiber start
 ```
 
